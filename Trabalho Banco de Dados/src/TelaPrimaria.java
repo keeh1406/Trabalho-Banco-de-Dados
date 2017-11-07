@@ -157,7 +157,7 @@ public class TelaPrimaria {
 
 											Long nEntradasResposta = jedis.incr(tMensagemVista2 + "--respo  ");
 											jedis.zadd(tMensagemVista2 + "--respo ", nEntradasResposta, tApelidoUsuarioDigitado + ":" + tDataAtualMensagem2.format(sFormatadorDataHora));
-											String tPara2 = jedis.get(tDataAtualMensagem2 + ":De");
+											String tPara2 = jedis.get(tMensagemVista2 + ":De");
 
 											jedis.sadd(tApelidoUsuarioDigitado + ":" + tDataAtualMensagem2.format(sFormatadorDataHora) + ":Para",tPara2);
 											jedis.set(tApelidoUsuarioDigitado + ":" + tDataAtualMensagem2.format(sFormatadorDataHora) + ":De",tApelidoUsuarioDigitado);

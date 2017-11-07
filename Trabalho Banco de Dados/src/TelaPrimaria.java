@@ -1,91 +1,89 @@
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Set;
+
 import br.edu.opet.util.Leitor;
 import redis.clients.jedis.Jedis;
 
 public class TelaPrimaria {
+
 	private static DateTimeFormatter sFormatador = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-	private static DateTimeFormatter sFormatadorHora = DateTimeFormatter.ofPattern("dd/MM/yyyy:HH:mm:ss");
+	private static DateTimeFormatter sFormatadorDataHora = DateTimeFormatter.ofPattern("dd/MM/yyyy:HH:mm:ss");
 
 	public static void main(String[] args) {
 		// Conectando no Redis server - localhost
 		Jedis jedis = new Jedis("localhost");
 
-		loop1: while (true) {
-			// Menu Iniciar
+		loop: while (true) {
 
 			System.out.println();
-			System.out.println("-------- MENU 1 --------");
 			System.out.println("1 - Criar Novo Usuário");
 			System.out.println("2 - Fazer Login");
 			System.out.println("3 - Sair do Programa");
 
 			System.out.println();
 
-			int tMenu = Leitor.readInt("O que você deseja fazer? ");
+			int tMenuPrincipal = Leitor.readInt("O que você deseja fazer? ");
 
-			casos1: switch (tMenu) {
+			loop2: switch (tMenuPrincipal) {
 
-			case 1:// Criando novo usuario
+			case 1:
 
-				LocalDate tDatatAtualCadastro = LocalDate.now();
+				LocalDate tDataAtualCadastro = LocalDate.now();
 
 				System.out.println("Novo Usuário");
-				String tNome = Leitor.readString("Nome: ");
-				if (tNome == "") {
-					break casos1;
+				String tNomeUsuario = Leitor.readString("Nome:");
+				if (tNomeUsuario == "") {
+					break loop2;
 				}
 				while (true) {
 
-					String tApelido = Leitor.readString("Apelido: ");
-					if (tApelido == "") {
-						break casos1;
+					String tApelidoUsuario = Leitor.readString("Apelido:");
+					if (tApelidoUsuario == "") {
+						break loop2;
 					}
 
-					String tApelidoBanco1 = jedis.hget("Usuario:" + tApelido, "Apelido");
+					String tApelidoBancoDados = jedis.hget("Usuario:" + tApelidoUsuario, "Apelido");
 
-					if (!(tApelidoBanco1 == null)) {
-						System.out.println("Este apelido de usuário já existe! Por favor, tente outro.");
+					if (!(tApelidoBancoDados == null)) {
+						System.out.println("Este apelido de usuário já está em uso. Tente outro.");
 						System.out.println();
 					} 
-						jedis.hset("Usuario:" + tApelido, "Nome", tNome);
-						jedis.hset("Usuario:" + tApelido, "Apelido", tApelido);
-						jedis.hset("Usuario:" + tApelido, "DataCadastro", tDatatAtualCadastro.format(sFormatador));
-						break casos1;
-					}
+						jedis.hset("Usuario:" + tApelidoUsuario, "Nome", tNomeUsuario);
+						jedis.hset("Usuario:" + tApelidoUsuario, "Apelido", tApelidoUsuario);
+						jedis.hset("Usuario:" + tApelidoUsuario, "DataCadastro", tDataAtualCadastro.format(sFormatador));
+						break loop2;
+				}
 
 			case 2:
 
 				while (true) {
 					System.out.println();
 					System.out.println("LOGIN");
-					String tApelidoDigitado = Leitor.readString("Apelido:");
-					if (tApelidoDigitado == "") {
-						break casos1;
+					String tApelidoUsuarioDigitado = Leitor.readString("Apelido:");
+					if (tApelidoUsuarioDigitado == "") {
+						break loop2;
 					}
 
-					String tApelidoBanco = jedis.hget("Usuario:" + tApelidoDigitado, "Apelido");
+					String tApelidoBancoDados = jedis.hget("Usuario:" + tApelidoUsuarioDigitado, "Apelido");
 
-					if (tApelidoBanco == null || !tApelidoBanco.equals(tApelidoDigitado)) {
+					if (tApelidoBancoDados == null || !tApelidoBancoDados.equals(tApelidoUsuarioDigitado)){
 						System.out.println(" Apelido inválido");
 					} else {
 						while (true) {
 
 							System.out.println();
-							System.out.println("------- MENU 2 -------");
 							System.out.println("1 - Enviar Mensagem");
 							System.out.println("2 - Caixa de Entradas");
 							System.out.println("3 - Caixa de Saída");
 							System.out.println("4 - Visualizar Dados");
-							System.out.println("5 - Voltar para a Tela Inicial");
+							System.out.println("5 - Encerrar sessão");
 							System.out.println();
 
-							int tOpcao = Leitor.readInt("O que você desejá fazer? ");
+							int tMenuSegundario = Leitor.readInt("O que você desejá fazer? ");
 
-							casos2: switch (tOpcao) {
+							loop3: switch (tMenuSegundario) {
 
 							case 1:
 
@@ -95,114 +93,191 @@ public class TelaPrimaria {
 								String tPara = Leitor.readString("Para:");
 
 								if (tPara == "") {
-									break casos2;
+									break loop3;
 								}
 
 								String tMensagem = Leitor.readString("Mensagem:");
 
 								if (tMensagem == "") {
-									break casos2;
+									break loop3;
 								}
 
-								jedis.sadd(tApelidoDigitado + ":" + tDataAtualMensagem.format(sFormatadorHora) + ":Para",
-										tPara);
-								jedis.set(tApelidoDigitado + ":" + tDataAtualMensagem.format(sFormatadorHora) + ":De",
-										tApelidoDigitado);
-								jedis.set(tApelidoDigitado + ":" + tDataAtualMensagem.format(sFormatadorHora) + ":Mensagem",
-										tMensagem);
-
-								Long nSaidas = jedis.incr(tApelidoDigitado + "--saida");
-								jedis.zadd(tApelidoDigitado + "--saida ", nSaidas,
-										tApelidoDigitado + ":" + tDataAtualMensagem.format(sFormatadorHora));
+								jedis.sadd(tApelidoUsuarioDigitado + ":" + tDataAtualMensagem.format(sFormatadorDataHora) + ":Para",tPara);
+								jedis.set(tApelidoUsuarioDigitado + ":" + tDataAtualMensagem.format(sFormatadorDataHora) + ":De",tApelidoUsuarioDigitado);
+								jedis.set(tApelidoUsuarioDigitado + ":" + tDataAtualMensagem.format(sFormatadorDataHora) + ":Mensagem",tMensagem);
+								
+								Long nSaidas = jedis.incr(tApelidoUsuarioDigitado + "--saida");
+								jedis.zadd(tApelidoUsuarioDigitado + "--saida ", nSaidas,
+										tApelidoUsuarioDigitado + ":" + tDataAtualMensagem.format(sFormatadorDataHora));
 
 								String[] textoSeparado = tPara.split(",");
-								// System.out.println(Arrays.toString(textoSeparado));
-								for (int i = 0; i < textoSeparado.length; i++) {
-									// System.out.println(textoSeparado[i]);
+								for (int i = 0; i < textoSeparado.length; i++) {Long nEntradas = jedis.incr(textoSeparado[i] + "--entr ");
 
-									Long nEntradas = jedis.incr(textoSeparado[i] + "--entr ");
-
-									jedis.zadd(textoSeparado[i] + "--entr  ", nEntradas,
-											tApelidoDigitado + ":" + tDataAtualMensagem.format(sFormatadorHora));
+									jedis.zadd(textoSeparado[i] + "--entr  ", nEntradas, tApelidoUsuarioDigitado + ":" + tDataAtualMensagem.format(sFormatadorDataHora));
 								}
-								break casos2;
+								break loop3;
 
 							case 2:
 
 								System.out.println("Caixa de Entrada");
 
-								System.out.println(jedis.zrange(tApelidoDigitado + ": entregue ", 0, -1));
+								Long contadorentradas = jedis.zlexcount(tApelidoUsuarioDigitado + "--entr  ", "-", "+");
+								System.out.println("Você tem " + contadorentradas + " mensagens.");
 
-								Long tVisualisar = Leitor.readLong("Visualisar mensagem:");
-								if (tVisualisar == 0) {
-									break casos2;
+								if (contadorentradas == 0) {
+
+									break loop3;
 								} else {
+									for (int i = 0; i < contadorentradas; i++) { System.out.println((1 + i) + " " + jedis.zrange(tApelidoUsuarioDigitado + "--entr  ", i, i));
 
-									Set<String> tMensagemVista = jedis.zrange(tApelidoDigitado + ": entregue ", tVisualisar - 1,
-											tVisualisar - 1);
+									}
 
-									String stringCortando = (tMensagemVista).toString();
-									String tMensagemVista2 = stringCortando.substring(1, stringCortando.length() - 1);
-
-									System.out.println(
-											jedis.get(tMensagemVista2 + ":De") + ": " + jedis.get(tMensagemVista2 + ":Mensagem"));
 									System.out.println();
+									Long tVisualisar = Leitor.readLong("Visualisar mensagem:");
 
-									String tResposta = Leitor.readString("Resposta:");
-
-									if (tResposta == "") {
-										break casos2;
+									if (tVisualisar == 0) {
+										break loop3;
 									} else {
 
-										Long nEntradasRespostas = jedis.incr(tMensagemVista2 + ":respostas");
-										jedis.zadd(tMensagemVista + ":respostas", nEntradasRespostas, tResposta);
+										Set<String> tMensagemVista = jedis.zrange(tApelidoUsuarioDigitado + "--entr  ", tVisualisar - 1, tVisualisar - 1);
+
+										String stringCortando = (tMensagemVista).toString();
+										String tMensagemVista2 = stringCortando.substring(1, stringCortando.length() - 1);
+
+										System.out.println(
+												jedis.get(tMensagemVista2 + ":De") + ": " + jedis.get(tMensagemVista2 + ":Mensagem"));
+										System.out.println();
+
+										String tResposta = Leitor.readString("Resposta:");
+
+										if (tResposta == "") {
+											break loop3;
+										} else {
+											LocalDateTime tDataAtualMensagem2 = LocalDateTime.now();
+
+											Long nEntradasResposta = jedis.incr(tMensagemVista2 + "--respo  ");
+											jedis.zadd(tMensagemVista2 + "--respo ", nEntradasResposta, tApelidoUsuarioDigitado + ":" + tDataAtualMensagem2.format(sFormatadorDataHora));
+											String tPara2 = jedis.get(tDataAtualMensagem2 + ":De");
+
+											jedis.sadd(tApelidoUsuarioDigitado + ":" + tDataAtualMensagem2.format(sFormatadorDataHora) + ":Para",tPara2);
+											jedis.set(tApelidoUsuarioDigitado + ":" + tDataAtualMensagem2.format(sFormatadorDataHora) + ":De",tApelidoUsuarioDigitado);
+											jedis.set(tApelidoUsuarioDigitado + ":" + tDataAtualMensagem2.format(sFormatadorDataHora) + ":Mensagem",tResposta);
+											
+											Long nSaidas2 = jedis.incr(tApelidoUsuarioDigitado + "--saida");
+											jedis.zadd(tApelidoUsuarioDigitado + "--saida ", nSaidas2, tApelidoUsuarioDigitado + ":" + tDataAtualMensagem2.format(sFormatadorDataHora));
+
+											Long nEntradas2 = jedis.incr(tPara2 + "--entr ");
+
+											jedis.zadd(tPara2 + "--entr  ", nEntradas2, tApelidoUsuarioDigitado + ":" + tDataAtualMensagem2.format(sFormatadorDataHora));
+
+										}
 									}
-									/* ZADD ZE:20102017092745:RESPOSTAS 1 "NEMEU:20102017092855" */
 								}
-								break casos2;
+								break loop3;
 
 							case 3:
 
-								System.out.println("Caixa de Saída");
+								System.out.println("Caixa de Saida");
 
-								System.out.println(jedis.zrange(tApelidoDigitado + ":saidas", 0, -1));
+								Long contadorsaidas = jedis.zlexcount(tApelidoUsuarioDigitado + "--saida ", "-", "+");
 
-								Long tVisualisarSaida = Leitor.readLong("Visualisar mensagem:");
-								if (tVisualisarSaida == 0 || tVisualisarSaida < 0) {
-									break casos2;
+								System.out.println("Você enviou " + contadorsaidas + " mensagens.");
+
+								if (contadorsaidas == 0) {
+
+									break loop3;
 								} else {
-									Set<String> tMensagemVista = jedis.zrange(tApelidoDigitado+":saidas",
-											tVisualisarSaida - 1, tVisualisarSaida - 1);
 
-									String stringCortando = (tMensagemVista).toString();
-									String tMensagemVista2 = stringCortando.substring(1, stringCortando.length() - 1);
+									for (int i = 0; i < contadorsaidas; i++) {
 
-									System.out.println(jedis.smembers(tMensagemVista2 +":Para"));
-									System.out.println(jedis.get(tMensagemVista2+":Mensagem"));
-									System.out.println();
+										System.out.println(
+												(1 + i) + " " + jedis.zrange(tApelidoUsuarioDigitado + "--saida ", i, i));
+									}
+
+									loop4: while (true) {
+
+										System.out.println();
+										Long tVisualisarSaida = Leitor.readLong("Visualisar mensagem:");
+
+										if (tVisualisarSaida == 0 || tVisualisarSaida < 0) {
+											break loop3;
+										} else {
+
+											Set<String> tMensagemVista3 = jedis.zrange(tApelidoUsuarioDigitado + "--saida ",
+													tVisualisarSaida - 1, tVisualisarSaida - 1);
+
+											String stringCortando = (tMensagemVista3).toString();
+											String tMensagemVista4 = stringCortando.substring(1, stringCortando.length() - 1);
+
+											System.out.println("Para: " + jedis.smembers(tMensagemVista4 + ":Para"));
+											System.out.println(jedis.get(tMensagemVista4 + ":Mensagem"));
+
+											Long contadorrespostas = jedis.zlexcount(tMensagemVista4 + "--respo ", "-", "+");
+											System.out.println();
+											System.out.println("Você possui " + contadorrespostas + " respostas.");
+											
+											
+											if (contadorrespostas == 0) {
+												break loop4;
+											} else {
+												System.out.println("Respostas:");
+												
+												for (int i = 0; i < contadorrespostas; i++) {
+													Set<String> tMensagemVista5 = jedis.zrange(tMensagemVista4 + "--respo ", i, i);
+
+													String stringCortando2 = (tMensagemVista5).toString();
+													String tTirandochave = stringCortando2.substring(1,
+															stringCortando2.length() - 1);
+
+													String tNomeUsuario2 = jedis.get(tTirandochave + ":De");
+
+													System.out.println((1+i) + "- " + tNomeUsuario2);
+												}
+
+												System.out.println();
+												Long tVisualisarResposta = Leitor.readLong("Visualisar mensagem:");
+
+												if (tVisualisarResposta == 0 || tVisualisarResposta < 0) {
+													break loop3;
+												} else {
+
+													Set<String> tMensagemVista7 = jedis.zrange(tMensagemVista4 + "--respo ",
+															tVisualisarResposta - 1, tVisualisarResposta - 1);
+													String stringCortando3 = (tMensagemVista7).toString();
+													String tTirandochave2 = stringCortando3.substring(1,
+															stringCortando3.length() - 1);
+
+													System.out.println(jedis.get(tTirandochave2 + ":Mensagem"));
+
+													String opf = Leitor.readString("Enter para Sair!");
+													if (opf == "")
+														break loop4;
+												}
+											}
+										}
+									}
 								}
-								break casos2;
+								break loop3;
 
 							case 4:
 								System.out.println();
 								System.out.println("Visualizar os Dados");
 
-								System.out.println("Apelido: "+jedis.hget("Usuario:"+tApelidoDigitado,"Apelido"));
-								System.out.println("Nome: " + jedis.hget("Usuario:"+tApelidoDigitado,"Nome"));
-								System.out.println("Data de Cadastro: "
-										+ jedis.hget("Usuario:" + tApelidoDigitado, "DataCadastro"));
+								System.out.println("Apelido: " + jedis.hget("Usuario:" + tApelidoUsuarioDigitado, "Apelido"));
+								System.out.println("Nome: " + jedis.hget("Usuario:" + tApelidoUsuarioDigitado, "Nome"));
+								System.out.println("Data de Cadastro: " + jedis.hget("Usuario:" + tApelidoUsuarioDigitado, "DataCadastro"));
 								System.out.println();
-								break casos2;
+								break loop3;
 
 							case 5:
-								break casos1;
+								break loop2;
 							}
 						}
 					}
 				}
 
 			case 3:
-				break loop1;
+				break loop;
 			}
 
 		}

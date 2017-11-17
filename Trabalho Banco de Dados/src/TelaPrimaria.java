@@ -35,11 +35,11 @@ public class TelaPrimaria {
 				
                 // Cadastro de Usuário Novo
 				System.out.println("Novo Usuário");
-				String tNomeUsuario = Leitor.readString("Nome:");
+				String tNomeUsuario = Leitor.readString("Nome do Usuário:");
 				// Pede pro Usuário digitar o nome
 				
 				if (tNomeUsuario == "") {
-					System.out.println("Nome não pode estar vazio!");
+					System.out.println("Nome do Usuário não pode estar vazio!");
 					break loop2;
 					// Se o Nome do Usuário for vazio, volta para o Menu Principal
 				}
@@ -52,7 +52,7 @@ public class TelaPrimaria {
 					}
 
 					String tApelidoBancoDados = jedis.hget("Usuario:" + tApelidoUsuario, "Apelido");
-					// Guardando no Banco de Dados o apelido escolhido pelo Usuário
+					// Procura no Banco de Dados se apelido escolhido pelo Usuário já está em uso
 
 					if (!(tApelidoBancoDados == null)) {
 						System.out.println("Este apelido de usuário já está em uso. Tente outro.");
@@ -61,8 +61,11 @@ public class TelaPrimaria {
 						System.out.println();
 					} 
 						jedis.hset("Usuario:" + tApelidoUsuario, "Nome", tNomeUsuario);
+						// Guarda no Banco a informação do Nome do Usuário
 						jedis.hset("Usuario:" + tApelidoUsuario, "Apelido", tApelidoUsuario);
+						// Guarda no Banco a informação do Apelido do Usuário
 						jedis.hset("Usuario:" + tApelidoUsuario, "DataCadastro", tDataAtualCadastro.format(sFormatador));
+						// Guarda no Banco a informação da Data de Cadastro do Usuário
 						break loop2;
 						// Guardando no Banco as informações
 				}
@@ -80,6 +83,7 @@ public class TelaPrimaria {
 					}
 
 					String tApelidoBancoDados = jedis.hget("Usuario:" + tApelidoUsuarioDigitado, "Apelido");
+					// Procura no Banco se o Apelido digitado existe
 
 					if (tApelidoBancoDados == null || !tApelidoBancoDados.equals(tApelidoUsuarioDigitado)){
 						// Se o apelido guardado no Banco de Dados for nulo e/ou o apelido digitano não for igual ao apelido gravado no Banco, dá erro
@@ -88,6 +92,7 @@ public class TelaPrimaria {
 						while (true) {
 
 							System.out.println();
+							System.out.println("---Menu Secundário---");
 							System.out.println("1 - Enviar Mensagem");
 							System.out.println("2 - Caixa de Entradas");
 							System.out.println("3 - Caixa de Saída");
@@ -280,7 +285,7 @@ public class TelaPrimaria {
 											
 											
 											if (contadorrespostas == 0) {
-												System.out.println("Você não enviou nenhuma mensagem!");
+												System.out.println("Você não tem nenhuma mensagem!");
 												break loop4;
 											} else {
 												System.out.println("Respostas:");
